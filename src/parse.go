@@ -150,12 +150,9 @@ func advance(st *State, id string) *Token {
 func expression(st *State, rbp int) *Token {
   t := st.current
   advance(st, "")
-  println("1")
   fmt.Printf("%#v\n", t.nud)
   left := t.nud(t)
-  println("2")
 
-  println("expr")
   for rbp < st.current.lbp {
     t = st.current
     advance(st, "")
@@ -220,7 +217,6 @@ func prefix(st *State, id string, nud func(s *Token) *Token) *Symbol {
 
 func assignment(st *State, id string) *Symbol {
   return infixr(st, id, 10, func(s *Token, left *Token) *Token {
-    println("assgn")
     if left.id != "." && left.id != "[" && left.Arity != ART_NAME {
       panic("Bad lvalue: " + left.id)
     }
@@ -362,7 +358,6 @@ func makeState(toks chan *Token) *State {
   })
 
   stmt(st, "var", func(s *Token) *Token {
-    println("var")
     a := new(v.Vector)
     var t *Token
     for {
