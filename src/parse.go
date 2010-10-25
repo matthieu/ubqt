@@ -327,6 +327,13 @@ func makeState(toks chan *Token) *State {
     advance(st, "")
     return s
   })
+  infix(st, "[", 80, func(s *Token, left *Token) *Token {
+    s.First = left
+    s.Second = expression(st, 0)
+    s.Arity = ART_BIN
+    advance(st, "]")
+    return s
+  })
 
   infixr(st, "&&", 30, nil)
   infixr(st, "||", 30, nil)

@@ -9,8 +9,8 @@ import (
 // yet but should be expanded enough to make all introspective operations easy.
 
 type Chunk struct {
-  header  Header
-  topfn   Funk
+  header  *Header
+  topfn   *Funk
 }
 
 type Header struct {
@@ -27,8 +27,8 @@ type Funk struct {
   paramNum    byte
   varargFlag  byte
   maxStack    byte
-  code        []int32
-  constants   []*Value
+  code        []uint32
+  consts      []*Value
   funks       []*Funk
   srcLines    []int32   // source line number for each instruction, optional
   locals      []Local   // may be empty (optional)
@@ -39,6 +39,10 @@ type Local struct {
   name  string
   start int32
   end   int32
+}
+
+func NewChunk() *Chunk {
+  return &Chunk{header: &Header{"ubqt", 1, 1}}
 }
 
 func (chunk *Chunk) serializeFile(fileName string) {

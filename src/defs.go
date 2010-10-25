@@ -37,9 +37,10 @@ const (
 )
 
 type Value struct {
-  Num float32
+  Num  float32
   Type uint8
   Bool bool
+  Str  string
 }
 
 func (v Value) Truthy() bool {

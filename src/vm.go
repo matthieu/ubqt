@@ -1,10 +1,9 @@
-package main
+package ubqt
 
 import (
   "fmt"
   "math"
   "time"
-  . "ubqt"
 )
 
 type State struct {
@@ -123,55 +122,26 @@ func (s *State) run() {
   }
 }
 
-type Gen struct {
-  pos   uint32
-  code  []uint32
-}
-func (gen *Gen) pushCode(op uint8, regs... uint16) *Gen {
-  opx := uint32(op)
-  var ax, bx, cx uint32
-  if len(regs) > 0 { ax = uint32(regs[0]) } else { ax = uint32(0) }
-  if len(regs) > 1 { bx = uint32(regs[1]) } else { bx = uint32(0) }
-  if len(regs) > 2 { cx = uint32(regs[2]) } else { cx = uint32(0) }
-
-  var code uint32
-  switch uint32(op) {
-    case ADD, SUB, MUL, DIV, EQ, LT, LE:
-      code = opx + ax << 6 + bx << 14 + cx << 23
-    case LOADK, MOV:
-      code = opx + ax << 6 + bx << 14
-    case JMP:
-      code = opx + bx << 14 + cx << 23
-    case RETURN:
-      code = uint32(opx)
-    default:
-      panic("unknown op code: " + string(op))
-  }
-  gen.code[gen.pos] = code
-  gen.pos++;
-  return gen
-}
-
-func main() {
-  consts  := [...]*Value{&Value{Type:NUM,Num:2} ,&Value{Type:NUM,Num:5}, &Value{Type:NUM,Num:1}, &Value{Type:NUM,Num:50000}}[0:4]
-  regs    := make([]*Value, 5)
-  code    := make([]uint32, 100005)
-
-  gen := Gen{0, code}
-  gen.pushCode(LOADK, 0, 0) // const 2 in reg 0
-  gen.pushCode(LOADK, 1, 1) // const 5 in reg 1
-  gen.pushCode(LOADK, 2, 2) // const 1 in reg 2
-  gen.pushCode(LOADK, 3, 3) // const 50000 in reg 3
-  gen.pushCode(ADD, 1, 0, 1)
-  gen.pushCode(SUB, 2, 1, 2)
-  gen.pushCode(LE, 1, 2, 3)
-  var offset int16 = -4
-  gen.pushCode(JMP, 0, uint16(offset))
-  gen.pushCode(RETURN)
-
-  bef := time.Nanoseconds()
-  s := State{consts, regs, code}
-  s.run()
-  aft := time.Nanoseconds()
-  fmt.Printf("result: %s in %s\n", regs[2], float64(aft - bef) / 1000000)
-}
+//func main() {
+//  consts  := [...]*Value{&Value{Type:NUM,Num:2} ,&Value{Type:NUM,Num:5}, &Value{Type:NUM,Num:1}, &Value{Type:NUM,Num:50000}}[0:4]
+//  regs    := make([]*Value, 5)
+//  code    := make([]uint32, 100005)
+//
+//  gen := Gen{0, code}
+//  gen.PushCode(LOADK, 0, 0) // const 2 in reg 0
+//  gen.PushCode(LOADK, 1, 1) // const 5 in reg 1
+//  gen.PushCode(LOADK, 2, 2) // const 1 in reg 2
+//  gen.PushCode(LOADK, 3, 3) // const 50000 in reg 3
+//  gen.PushCode(ADD, 1, 0, 1)
+//  gen.PushCode(SUB, 2, 1, 2)
+//  gen.PushCode(LE, 1, 2, 3)
+//  var offset int16 = -4
+//  gen.PushCode(JMP, 0, uint16(offset))
+//  gen.PushCode(RETURN)
+//
+//  bef := time.Nanoseconds()
+//  s := State{consts, regs, code}
+//  s.run()
+//  aft := time.Nanoseconds()
+//  fmt.Printf("result: %s in %s\n", regs[2], float64(aft - bef) / 1000000)
+//}

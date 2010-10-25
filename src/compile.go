@@ -1,8 +1,14 @@
 package ubqt
 
+import (
+  "fmt"
+  "strconv"
+)
+
 type Gen struct {
-  pos   uint32
-  code  []uint32
+  cpos  uint32
+  kpos  uint32
+  fn    *Funk
 }
 func (gen *Gen) pushCode(op uint8, regs... uint16) *Gen {
   opx := uint32(op)
@@ -24,29 +30,56 @@ func (gen *Gen) pushCode(op uint8, regs... uint16) *Gen {
     default:
       panic("unknown op code: " + string(op))
   }
-  gen.code[gen.pos] = code
-  gen.pos++;
+  gen.fn.code[gen.cpos] = code
+  gen.cpos++
   return gen
+}
+
+func (gen *Gen) pushConst(v *Value) uint32 {
+  gen.fn.consts[gen.kpos] = v
+  gen.kpos++
+  return gen.kpos
 }
 
 func Compile(sourceName string, tok *Token) *Chunk {
   chunk := NewChunk()
-  chunk.topfn = compileToken(sourceName, tok)
+  chunk.topfn = funk(sourceName, tok)
   return chunk
 }
 
-func compileToken(sourceName string, tok *Token) *Funk {
+func funk(sourceName string, tok *Token) *Funk {
   code := make([]uint32, 1024) // reserving 4k for code
-  gen  := Gen{0, code}
-//  switch tok.Arity {
-//    case ubqt.ART_LIST:
-//    case ubqt.ART_NAME:
-//    case ubqt.ART_LITERAL:
-//    case ubqt.ART_BIN:
-//    default:
-//      panic("Unknown token! " + fmt.Sprintf("%#v", tok))
-//  }
-  funk := &Funk{sourceName: sourceName, code: gen.code}
+  consts := make([]*Value, 50) // 50 constant pointers
+  funk := &Funk{sourceName: sourceName, code: code, consts: consts}
+  gen  := &Gen{0, 0, funk}
+  token(tok, gen)
   return funk
 }
 
+func token(tok *Token, gen *Gen) {
+  switch tok.Arity {
+    case ART_LIST:
+    case ART_NAME:
+    case ART_LITERAL:
+      literal(tok, gen)
+    case ART_BIN:
+      binOp(tok, gen)
+    default:
+      panic("Unknown token! " + fmt.Sprintf("%#v", tok))
+  }
+}
+
+func binOp(tok *Token, gen *Gen) {
+}
+
+func literal(tok *Token, gen *Gen) uint32 {
+  var val *Value
+  if tok.Value[0] == 34 {
+    val = &Value{Str: tok.Value[1:len(tok.Value)-1]}
+  } else {
+    f, err := strconv.Atof32(tok.Value)
+    if err != nil { panic("Number overflow: " + tok.Value) }
+    val = &Value{Num: f}
+  }
+  return gen.pushConst(val)
+}
