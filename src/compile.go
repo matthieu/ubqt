@@ -7,9 +7,16 @@ import (
 
 type Gen struct {
   cpos  uint32
-  kpos  uint32
+  kpos  uint16
   fn    *Funk
 }
+
+func (gen *Gen) newReg() uint16 {
+  ret := gen.fn.maxStack
+  gen.fn.maxStack++
+  return uint16(ret)
+}
+
 func (gen *Gen) pushCode(op uint8, regs... uint16) *Gen {
   opx := uint32(op)
   var ax, bx, cx uint32
@@ -35,10 +42,14 @@ func (gen *Gen) pushCode(op uint8, regs... uint16) *Gen {
   return gen
 }
 
-func (gen *Gen) pushConst(v *Value) uint32 {
+func (gen *Gen) pushConst(v *Value) uint16 {
+  // TODO check if the const already exists
   gen.fn.consts[gen.kpos] = v
+  k := gen.kpos
+  r := gen.newReg()
+  gen.pushCode(LOADK, r, k)
   gen.kpos++
-  return gen.kpos
+  return r
 }
 
 func Compile(sourceName string, tok *Token) *Chunk {
@@ -50,29 +61,44 @@ func Compile(sourceName string, tok *Token) *Chunk {
 func funk(sourceName string, tok *Token) *Funk {
   code := make([]uint32, 1024) // reserving 4k for code
   consts := make([]*Value, 50) // 50 constant pointers
-  funk := &Funk{sourceName: sourceName, code: code, consts: consts}
+  funk := &Funk{sourceName: sourceName, code: code, consts: consts, maxStack: 0}
   gen  := &Gen{0, 0, funk}
   token(tok, gen)
   return funk
 }
 
-func token(tok *Token, gen *Gen) {
+func token(tok *Token, gen *Gen) uint16 {
   switch tok.Arity {
     case ART_LIST:
     case ART_NAME:
     case ART_LITERAL:
-      literal(tok, gen)
-    case ART_BIN:
-      binOp(tok, gen)
+      return literal(tok, gen)
+    case LOADK, ART_BIN:
+      return binOp(tok, gen)
     default:
       panic("Unknown token! " + fmt.Sprintf("%#v", tok))
   }
+  panic("Unreachable.")
 }
 
-func binOp(tok *Token, gen *Gen) {
+func binOp(tok *Token, gen *Gen) uint16 {
+  lidx := token(tok.First, gen)
+  ridx := token(tok.Second, gen)
+  var code uint8
+  switch tok.Value {
+    case "+": code = ADD
+    case "-": code = SUB
+    case "*": code = MUL
+    case "/": code = DIV
+    default:
+      panic("Unknown operator: " + tok.Value)
+  }
+  r := gen.newReg()
+  gen.pushCode(code, r, lidx, ridx)
+  return r
 }
 
-func literal(tok *Token, gen *Gen) uint32 {
+func literal(tok *Token, gen *Gen) uint16 {
   var val *Value
   if tok.Value[0] == 34 {
     val = &Value{Str: tok.Value[1:len(tok.Value)-1]}
