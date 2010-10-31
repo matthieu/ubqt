@@ -1,58 +1,60 @@
 package ubqt
 
 import (
-  "fmt"
   "math"
-  "time"
 )
 
-type State struct {
+type RunEnv struct {
   consts  []*Value
   regs    []*Value
   code    []uint32
 }
 
-func (s *State) inst(instr uint32) uint8 {
+func NewRunEnv(chunk *Chunk) *RunEnv {
+  return &RunEnv{chunk.topfn.consts, make([]*Value, chunk.topfn.maxStack), chunk.topfn.code}
+}
+
+func (s *RunEnv) inst(instr uint32) uint8 {
   return uint8(instr & OpMask)
 }
-func (s *State) va(instr uint32) uint16 {
+func (s *RunEnv) va(instr uint32) uint16 {
   return uint16((instr >> 6) & AMask)
 }
-func (s *State) vc(instr uint32) uint16 {
+func (s *RunEnv) vc(instr uint32) uint16 {
   return uint16((instr >> 23) & CMask)
 }
-func (s *State) ra(instr uint32) *Value {
+func (s *RunEnv) ra(instr uint32) *Value {
   return s.regs[uint16((instr >> 6) & AMask)]
 }
-func (s *State) rb(instr uint32) *Value {
+func (s *RunEnv) rb(instr uint32) *Value {
   return s.regs[uint16((instr >> 14) & BMask)]
 }
-func (s *State) rc(instr uint32) *Value {
+func (s *RunEnv) rc(instr uint32) *Value {
   return s.regs[uint16((instr >> 23) & CMask)]
 }
-func (s *State) vbx(instr uint32) int32 {
+func (s *RunEnv) vbx(instr uint32) int32 {
   return int32((instr >> 14) & BxMask)
 }
-func (s *State) kb(instr uint32) *Value {
+func (s *RunEnv) kb(instr uint32) *Value {
   return s.consts[uint16((instr >> 14) & BMask)]
 }
-func (s *State) rkb(instr uint32) (r *Value) {
+func (s *RunEnv) rkb(instr uint32) (r *Value) {
   bval := uint16((instr >> 14) & BMask)
   if bval > 250 { r = s.consts[bval] } else { r = s.regs[bval] }
   return
 }
-func (s *State) rkc(instr uint32) (r *Value) {
+func (s *RunEnv) rkc(instr uint32) (r *Value) {
   cval := uint16((instr >> 23) & CMask)
   if cval > 250 { r = s.consts[cval] } else { r = s.regs[cval] }
   return
 }
 
-func (s *State) jmp(i int32) int32 {
+func (s *RunEnv) jmp(i int32) int32 {
   sa := int16(s.code[i] >> 14)
   return int32(sa)
 }
 
-func (s *State) run() {
+func (s *RunEnv) Eval() *Value {
   var pc uint32
   var op uint8
   var va uint16
@@ -120,6 +122,7 @@ func (s *State) run() {
     }
     i++
   }
+  return s.regs[len(s.regs)-1]
 }
 
 //func main() {
@@ -140,7 +143,7 @@ func (s *State) run() {
 //  gen.PushCode(RETURN)
 //
 //  bef := time.Nanoseconds()
-//  s := State{consts, regs, code}
+//  s := RunEnv{consts, regs, code}
 //  s.run()
 //  aft := time.Nanoseconds()
 //  fmt.Printf("result: %s in %s\n", regs[2], float64(aft - bef) / 1000000)

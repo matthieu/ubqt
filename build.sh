@@ -9,6 +9,6 @@ rm -rf out; mkdir -p out
 # 6g -o out/vm.6 -I out/ src/vm.go
 # 6l -L out -o out/vm out/vm.6
 
-6g -o out/ubqt.6 src/token.go src/parse.go src/chunk.go src/defs.go src/compile.go
+6g -o out/ubqt.6 src/token.go src/parse.go src/chunk.go src/defs.go src/compile.go src/vm.go
 6g -I out -o out/repl.6 src/repl.go
 6l -L out -o out/ubqt out/repl.6

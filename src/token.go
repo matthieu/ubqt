@@ -50,7 +50,6 @@ func Tokenize(src io.Reader, out chan *Token) {
   s.Mode = scn.ScanIdents | scn.ScanFloats | scn.SkipComments | scn.ScanStrings
   s.Init(src)
   var tok int
-  //tok := s.Scan()
   for {
     tok = s.Scan()
     fmt.Printf("tok %#v %#v\n", tok, s.TokenText())

@@ -9,6 +9,7 @@ type Gen struct {
   cpos  uint32
   kpos  uint16
   fn    *Funk
+  names map[string] uint16
 }
 
 func (gen *Gen) newReg() uint16 {
@@ -61,8 +62,9 @@ func Compile(sourceName string, tok *Token) *Chunk {
 func funk(sourceName string, tok *Token) *Funk {
   code := make([]uint32, 1024) // reserving 4k for code
   consts := make([]*Value, 50) // 50 constant pointers
+  names   := make(map[string] uint16, 255) // 255 names
   funk := &Funk{sourceName: sourceName, code: code, consts: consts, maxStack: 0}
-  gen  := &Gen{0, 0, funk}
+  gen  := &Gen{0, 0, funk, names}
   token(tok, gen)
   return funk
 }
@@ -70,7 +72,15 @@ func funk(sourceName string, tok *Token) *Funk {
 func token(tok *Token, gen *Gen) uint16 {
   switch tok.Arity {
     case ART_LIST:
+      vlen := tok.List.Len()
+      if vlen == 0 { panic("Empty token list") }
+      for m := 0; m < vlen; m++ {
+        t := token(tok.List.At(m).(*Token), gen)
+        if m == vlen-1 { return t }
+      }
     case ART_NAME:
+      name := gen.names[tok.Value]
+      if name == 0 { panic("Unknown name: " + tok.Value) }
     case ART_LITERAL:
       return literal(tok, gen)
     case LOADK, ART_BIN:
@@ -78,12 +88,19 @@ func token(tok *Token, gen *Gen) uint16 {
     default:
       panic("Unknown token! " + fmt.Sprintf("%#v", tok))
   }
-  panic("Unreachable.")
+  panic("Unreachable: " + strconv.Itoa(tok.Arity))
 }
 
 func binOp(tok *Token, gen *Gen) uint16 {
-  lidx := token(tok.First, gen)
   ridx := token(tok.Second, gen)
+  if tok.Value == "=" {
+    if tok.First.Arity != ART_NAME { panic("Expected name as left value in assignment") }
+    name := tok.First.Value
+    gen.names[name] = ridx
+    return ridx
+  }
+
+  lidx := token(tok.First, gen)
   var code uint8
   switch tok.Value {
     case "+": code = ADD

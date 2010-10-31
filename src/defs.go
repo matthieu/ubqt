@@ -1,5 +1,9 @@
 package ubqt
 
+import (
+  "strconv"
+)
+
 const OpMask uint32 = uint32(^uint8(3<<6))
 const AMask  uint32 = uint32(^uint8(0))
 const BMask  uint32 = AMask << 1 + 1
@@ -55,3 +59,14 @@ func (v Value) Truthy() bool {
   return false
 }
 
+func (v Value) StrLiteral() string {
+  switch v.Type {
+    case NUM:
+      return strconv.Ftoa32(v.Num, 'g', 6)
+    case BOOL:
+      return strconv.Btoa(v.Bool)
+    case STRING:
+      return "\"" + v.Str + "\""
+  }
+  panic("unknown value type: " + string(v.Type))
+}

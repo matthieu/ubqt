@@ -55,10 +55,14 @@ func main() {
   for {
     fmt.Print("# ")
     s, _ := in.ReadString('\n')
-    res := parseString(s)
-    if res != nil {
-      fmt.Printf("=> %#v\n", res)
-      printTokens(res, "")
+    toks := parseString(s)
+    if toks != nil {
+      fmt.Printf("=> %#v\n", toks)
+      printTokens(toks, "")
+      chunk := ubqt.Compile("<interpr>", toks)
+      state := ubqt.NewRunEnv(chunk)
+      res := state.Eval()
+      println(res.StrLiteral())
     }
   }
 }
