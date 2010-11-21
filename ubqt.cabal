@@ -1,0 +1,25 @@
+name:           ubqt
+version:        0.0
+cabal-version:  >= 1.8
+license:        GPL
+author:         Matthieu Riou
+category:       Language
+build-type:     Simple
+
+executable helloCore
+  main-is:        helloCore.hs
+  hs-source-dirs: bin
+
+  build-depends:
+    base >= 4,
+    ghc-paths,
+    ghc >= 7.0.1
+
+Executable dumpCore
+  main-is:        dumpCore.hs
+  hs-source-dirs: bin
+
+  build-depends:
+    base >= 4,
+    ghc-paths,
+    ghc >= 7.0.1
